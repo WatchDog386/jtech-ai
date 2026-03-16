@@ -1,10 +1,28 @@
 // © 2025 Jeff. All rights reserved.
 // Unauthorized copying, distribution, or modification of this file is strictly prohibited.
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ExtractedPlan } from "@/contexts/PlanContext";
 import { getEnv } from "@/utils/envConfig";
 
 class PlanParserService {
+  private genAI: GoogleGenerativeAI;
+  private model;
+
+  constructor() {
+    const apiKey =
+      getEnv("NEXT_GEMINI_API_KEY") || getEnv("VITE_GEMINI_API_KEY");
+    if (!apiKey) {
+      throw new Error(
+        "Missing Gemini API key. Set NEXT_PUBLIC_GEMINI_API_KEY (Next.js) OR VITE_GEMINI_API_KEY (Vite).",
+      );
+    }
+    this.genAI = new GoogleGenerativeAI(apiKey);
+    this.model = this.genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+    });
+  }
+
   /**
    * Parse a construction plan file using Gemini Vision API
    * Supports PDF, images (JPG, PNG)
@@ -40,21 +58,9 @@ class PlanParserService {
         text: this.getAnalysisPrompt(!!bbsFile),
       });
 
-      const response = await fetch("/.netlify/functions/gemini-proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "gemini-2.5-flash",
-          contents: [{ parts: contentParts }]
-        }),
-      });
+      const response = await this.model.generateContent(contentParts);
 
-      if (!response.ok) {
-        throw new Error(`Proxy error: ${await response.text()}`);
-      }
-
-      const resData = await response.json();
-      const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const responseText = response.response.text();
       const parsedData = this.extractJsonFromResponse(responseText);
 
       return parsedData;
@@ -73,21 +79,13 @@ class PlanParserService {
    */
   async parsePlanFromUrl(url: string): Promise<ExtractedPlan> {
     try {
-      const response = await fetch("/.netlify/functions/gemini-proxy", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "gemini-2.5-flash",
-          contents: [{ parts: [{ text: `Analyze this construction plan image from URL: ${url}\n\n${this.getAnalysisPrompt()}` }] }]
-        }),
-      });
+      const response = await this.model.generateContent([
+        {
+          text: `Analyze this construction plan image from URL: ${url}\n\n${this.getAnalysisPrompt()}`,
+        },
+      ]);
 
-      if (!response.ok) {
-        throw new Error(`Proxy error: ${await response.text()}`);
-      }
-
-      const resData = await response.json();
-      const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      const responseText = response.response.text();
       const parsedData = this.extractJsonFromResponse(responseText);
 
       return parsedData;

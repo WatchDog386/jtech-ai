@@ -49,11 +49,13 @@ const QuotePaymentPage = () => {
   const handlePaystackSuccess = async (reference: any) => {
     setPaymentStatus("processing");
     try {
-      // Verify payment through backend proxy to avoid exposing secret key
+      // Verify payment
       const response = await fetch(
-        `/.netlify/functions/paystack-verify?reference=${reference.reference}`,
+        `https://api.paystack.co/transaction/verify/${reference.reference}`,
         {
-          method: "GET",
+          headers: {
+            Authorization: `Bearer ${getEnv("NEXT_PAYSTACK_SECRET_KEY") || getEnv("VITE_PAYSTACK_SECRET_KEY")}`,
+          },
         },
       );
 
