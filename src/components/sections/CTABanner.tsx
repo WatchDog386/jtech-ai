@@ -1,62 +1,16 @@
 import { motion } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function CTABanner({ scrollTo }: any) {
   const [email, setEmail] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState("");
   const navigate = useNavigate();
-  const turnstileRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Make sure we have the turnstile function globally
-    if (!(window as any).turnstile) {
-      const script = document.createElement("script");
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-
-      script.onload = () => {
-        renderTurnstile();
-      };
-    } else {
-      renderTurnstile();
-    }
-
-    function renderTurnstile() {
-      const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
-      if (turnstileRef.current && (window as any).turnstile) {
-        try {
-          (window as any).turnstile.render(turnstileRef.current, {
-            sitekey: siteKey,
-            theme: "dark",
-            callback: function(token: string) {
-              setTurnstileToken(token);
-            },
-            "error-callback": function() {
-               // Fallback if Turnstile fails
-               setTurnstileToken("fallback-token");
-            }
-          });
-        } catch (e) {
-          console.error("Turnstile error:", e);
-          setTurnstileToken("fallback-token");
-        }
-      } else {
-        // Auto-fulfill if turnstile is not loaded or bypass is needed
-        setTurnstileToken("bypassed");
-      }
-    }
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && turnstileToken) {
+    if (email) {
       // Redirect to signup
       navigate('/auth?mode=signup', { state: { email } });
-    } else if (!turnstileToken) {
-      alert("Please complete the Cloudflare verification.");
     }
   };
 
@@ -82,16 +36,10 @@ export default function CTABanner({ scrollTo }: any) {
               />
               <button
                 type="submit"
-                className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-8 py-3.5 font-bold rounded transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!turnstileToken}
+                className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-8 py-3.5 font-bold rounded transition-colors whitespace-nowrap"
               >
                 Subscribe Now
               </button>
-            </div>
-
-            {/* Cloudflare Turnstile Verification */}
-            <div className="mt-2" style={{ colorScheme: 'dark' }}>
-              <div ref={turnstileRef}></div>
             </div>
           </form>
         </div>
