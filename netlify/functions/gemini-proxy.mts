@@ -1,8 +1,8 @@
 import type { Context, Config } from "@netlify/functions";
 
-// Configure Netlify function timeout (Max 26 seconds on paid tier)
+// Configure Netlify function timeout (60s for Gemini API which can take 30-60s)
 export const config: Config = {
-  timeout: 26,
+  timeout: 60,
 };
 
 const GEMINI_API_BASE =
