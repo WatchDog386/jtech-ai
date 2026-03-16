@@ -28,7 +28,7 @@ export default async (request: Request, _context: Context) => {
       generationConfig?: unknown;
     };
 
-    const geminiModel = model || "gemini-1.5-flash";
+    const geminiModel = model || "gemini-2.5-flash";
     const url = `${GEMINI_API_BASE}/${geminiModel}:generateContent?key=${apiKey}`;
 
     const geminiBody: Record<string, unknown> = { contents };
@@ -44,8 +44,15 @@ export default async (request: Request, _context: Context) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      let errorMessage = `Gemini API error: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson?.error?.message || errorMessage;
+      } catch {
+        // Use raw text if not JSON
+      }
       return Response.json(
-        { error: `Gemini API error: ${response.status} ${response.statusText}`, details: errorText },
+        { error: errorMessage, details: errorText },
         { status: response.status }
       );
     }
