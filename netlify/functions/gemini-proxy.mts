@@ -12,7 +12,9 @@ export default async (request: Request, _context: Context) => {
     return Response.json({ error: "Method not allowed" }, { status: 405 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const envKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  const apiKey = envKey ? envKey.replace(/^"|"$/g, '').trim() : undefined;
+
   if (!apiKey) {
     return Response.json(
       { error: "Gemini API key not configured on server" },
