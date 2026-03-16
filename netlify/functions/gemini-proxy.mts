@@ -1,4 +1,9 @@
-import type { Context } from "@netlify/functions";
+import type { Context, Config } from "@netlify/functions";
+
+// Configure Netlify function timeout (Max 26 seconds on paid tier)
+export const config: Config = {
+  timeout: 26,
+};
 
 const GEMINI_API_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
