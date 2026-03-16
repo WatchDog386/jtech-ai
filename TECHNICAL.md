@@ -2237,10 +2237,10 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Google Gemini
-VITE_GOOGLE_AI_KEY=AIzaSy...
+VITE_GOOGLE_AI_KEY=your_google_ai_key
 
 # Paystack
-VITE_PAYSTACK_KEY=pk_live_...
+VITE_PAYSTACK_KEY=your_paystack_public_key
 
 # App URLs
 VITE_APP_URL=https://constructly-ai.com
