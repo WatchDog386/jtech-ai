@@ -54,10 +54,15 @@ class PlanParserService {
       if (!response.ok) {
         let errorBody = "";
         try {
-          const errData = await response.json();
-          errorBody = errData.error || errData.details || response.statusText;
+          const errText = await response.text();
+          try {
+            const errData = JSON.parse(errText);
+            errorBody = errData.error || errData.details || response.statusText;
+          } catch {
+            errorBody = errText || response.statusText;
+          }
         } catch {
-          errorBody = await response.text() || response.statusText;
+          errorBody = response.statusText;
         }
         throw new Error(`Gemini proxy error: ${errorBody}`);
       }
@@ -102,10 +107,15 @@ class PlanParserService {
       if (!response.ok) {
         let errorBody = "";
         try {
-          const errData = await response.json();
-          errorBody = errData.error || errData.details || response.statusText;
+          const errText = await response.text();
+          try {
+            const errData = JSON.parse(errText);
+            errorBody = errData.error || errData.details || response.statusText;
+          } catch {
+            errorBody = errText || response.statusText;
+          }
         } catch {
-          errorBody = await response.text() || response.statusText;
+          errorBody = response.statusText;
         }
         throw new Error(`Gemini proxy error: ${errorBody}`);
       }
