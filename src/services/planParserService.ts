@@ -1,27 +1,11 @@
 // © 2025 Jeff. All rights reserved.
 // Unauthorized copying, distribution, or modification of this file is strictly prohibited.
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ExtractedPlan } from "@/contexts/PlanContext";
-import { getEnv } from "@/utils/envConfig";
 
 class PlanParserService {
-  private genAI: GoogleGenerativeAI;
-  private model;
-
-  constructor() {
-    const apiKey =
-      getEnv("NEXT_GEMINI_API_KEY") || getEnv("VITE_GEMINI_API_KEY");
-    if (!apiKey) {
-      throw new Error(
-        "Missing Gemini API key. Set NEXT_PUBLIC_GEMINI_API_KEY (Next.js) OR VITE_GEMINI_API_KEY (Vite).",
-      );
-    }
-    this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-    });
-  }
+  private proxyUrl = "/.netlify/functions/gemini-proxy";
+  private model = "gemini-2.5-flash";
 
   /**
    * Parse a construction plan file using Gemini Vision API
@@ -33,7 +17,7 @@ class PlanParserService {
       const base64Data = await this.fileToBase64(file);
       const mimeType = this.getMimeType(file.name);
 
-      const contentParts: any[] = [
+      const parts: any[] = [
         {
           inlineData: {
             data: base64Data,
@@ -46,7 +30,7 @@ class PlanParserService {
       if (bbsFile) {
         const bbsBase64Data = await this.fileToBase64(bbsFile);
         const bbsMimeType = this.getMimeType(bbsFile.name);
-        contentParts.push({
+        parts.push({
           inlineData: {
             data: bbsBase64Data,
             mimeType: bbsMimeType,
@@ -54,13 +38,11 @@ class PlanParserService {
         });
       }
 
-      contentParts.push({
+      parts.push({
         text: this.getAnalysisPrompt(!!bbsFile),
       });
 
-      const response = await this.model.generateContent(contentParts);
-
-      const responseText = response.response.text();
+      const responseText = await this.callGeminiProxy(parts);
       const parsedData = this.extractJsonFromResponse(responseText);
 
       return parsedData;
@@ -79,13 +61,13 @@ class PlanParserService {
    */
   async parsePlanFromUrl(url: string): Promise<ExtractedPlan> {
     try {
-      const response = await this.model.generateContent([
+      const parts = [
         {
           text: `Analyze this construction plan image from URL: ${url}\n\n${this.getAnalysisPrompt()}`,
         },
-      ]);
+      ];
 
-      const responseText = response.response.text();
+      const responseText = await this.callGeminiProxy(parts);
       const parsedData = this.extractJsonFromResponse(responseText);
 
       return parsedData;
@@ -97,6 +79,33 @@ class PlanParserService {
         }`,
       );
     }
+  }
+
+  private async callGeminiProxy(parts: any[]): Promise<string> {
+    const response = await fetch(this.proxyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: this.model,
+        contents: [{ parts }],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        `Gemini API error: ${response.status} ${response.statusText}${errorData.error ? ` - ${errorData.error}` : ""}`,
+      );
+    }
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error("No text content in Gemini response");
+    }
+    return text;
   }
 
   private fileToBase64(file: File): Promise<string> {

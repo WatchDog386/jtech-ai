@@ -49,13 +49,15 @@ const QuotePaymentPage = () => {
   const handlePaystackSuccess = async (reference: any) => {
     setPaymentStatus("processing");
     try {
-      // Verify payment
+      // Verify payment via server-side proxy
       const response = await fetch(
-        `https://api.paystack.co/transaction/verify/${reference.reference}`,
+        "/.netlify/functions/paystack-verify",
         {
+          method: "POST",
           headers: {
-            Authorization: `Bearer ${getEnv("NEXT_PAYSTACK_SECRET_KEY") || getEnv("VITE_PAYSTACK_SECRET_KEY")}`,
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify({ reference: reference.reference }),
         },
       );
 

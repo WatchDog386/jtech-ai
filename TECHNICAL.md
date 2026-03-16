@@ -2236,15 +2236,16 @@ Create `.env` in project root:
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Google Gemini
-VITE_GOOGLE_AI_KEY=AIzaSy...
-
-# Paystack
+# Paystack (public key only - secret key is configured server-side)
 VITE_PAYSTACK_KEY=pk_live_...
 
 # App URLs
 VITE_APP_URL=https://constructly-ai.com
 VITE_API_URL=https://api.constructly-ai.com
+
+# Server-side only (set in Netlify environment, not in .env)
+# GEMINI_API_KEY=your_gemini_key
+# PAYSTACK_SECRET_KEY=your_paystack_secret
 ```
 
 ## Appendix: Useful Commands
