@@ -1,8 +1,8 @@
 import type { Context, Config } from "@netlify/functions";
 
-// Configure Netlify function timeout (Max 26 seconds on paid tier)
+// Configure Netlify function timeout (Max 26 seconds on paid tier, expanding to 60 for better margins on background)
 export const config: Config = {
-  timeout: 26,
+  timeout: 60,
 };
 
 const GEMINI_API_BASE =
@@ -18,7 +18,7 @@ export default async (request: Request, _context: Context) => {
   }
 
   const envKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-  const apiKey = envKey ? envKey.replace(/^"|"$/g, '').trim() : undefined;
+  const apiKey = envKey ? envKey.replace(/^"|"$/g, '').replace(/\r?\n|\r/g, '').trim() : undefined;
 
   if (!apiKey) {
     return Response.json(
@@ -50,9 +50,11 @@ export default async (request: Request, _context: Context) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorData = await response.json().catch(() => null);
+      const errorText = await response.text().catch(() => "Unknown error");
+      const geminiErrorMsg = errorData?.error?.message || errorText;
       return Response.json(
-        { error: `Gemini API error: ${response.status} ${response.statusText}`, details: errorText },
+        { error: `Gemini API error: ${response.status} ${response.statusText}`, details: geminiErrorMsg },
         { status: response.status }
       );
     }
