@@ -46,7 +46,7 @@ class PlanParserService {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gemini-1.5-flash",
+          model: "gemini-2.5-flash",
           contents: [{ parts: contentParts }],
         }),
       });
@@ -86,7 +86,7 @@ class PlanParserService {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "gemini-1.5-flash",
+          model: "gemini-2.5-flash",
           contents: [
             {
               parts: [
